@@ -1,7 +1,7 @@
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const { expect } = chai;
-const app = require('../app'); // Assuming app.js is your main file and exports the server
+const app = require('./app'); // Assuming app.js is your main file and exports the server
 
 chai.use(chaiHttp);
 
