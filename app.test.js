@@ -6,18 +6,30 @@ const server = require('./app'); // Import the server
 chai.use(chaiHttp);
 
 describe('Login Functionality', () => {
+  let testServer;
+
   // Before all tests, start the server
   before((done) => {
-    server.listen(3001, done);
+    testServer = server.listen(3001, () => {
+      console.log('Test server running on port 3001');
+      done();
+    });
   });
 
   // After all tests, close the server
   after((done) => {
-    server.close(done);
+    if (testServer) {
+      testServer.close(() => {
+        console.log('Test server closed');
+        done();
+      });
+    } else {
+      done();
+    }
   });
 
   it('should return "Login successful" for correct credentials', (done) => {
-    chai.request(server)
+    chai.request(testServer)
       .post('/login')
       .type('form')
       .send({ username: 'admin', password: 'password123' })
@@ -30,7 +42,7 @@ describe('Login Functionality', () => {
   });
 
   it('should return "Invalid username or password" for incorrect credentials', (done) => {
-    chai.request(server)
+    chai.request(testServer)
       .post('/login')
       .type('form')
       .send({ username: 'wronguser', password: 'wrongpassword' })
