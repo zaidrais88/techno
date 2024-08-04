@@ -1,5 +1,4 @@
 const http = require('http');
-const url = require('url');
 const querystring = require('querystring');
 
 // Preset username and password
@@ -65,8 +64,13 @@ const server = http.createServer((req, res) => {
   }
 });
 
-// Start the server
-const port = 3001;
-server.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
+// Export the server instance for testing
+module.exports = server;
+
+// Start the server only if this file is executed directly
+if (require.main === module) {
+  const port = 3001;
+  server.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+  });
+}
