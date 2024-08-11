@@ -13,4 +13,4 @@ services:
       - .:/usr/src/app  # Bind mount the current directory to /usr/src/app in the container
       - /usr/src/app/node_modules  # Avoid mounting node_modules to prevent issues with node modules
 
-# Define any networks or volumes if needed
+
