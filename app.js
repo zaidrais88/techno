@@ -45,11 +45,13 @@ const server = http.createServer((req, res) => {
         res.end('Login successful');
         loginAttempts.inc({ status: 'success' });
         console.log(`Login successful for user: ${username}`);
+		console.log('Incremented success login metric');
       } else {
         res.writeHead(401, { 'Content-Type': 'text/plain' });
         res.end('Invalid username or password');
         loginAttempts.inc({ status: 'failure' });
         console.log(`Login failed for user: ${username}`);
+		console.log('Incremented failure login metric');
       }
     });
 
