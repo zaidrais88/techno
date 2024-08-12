@@ -24,6 +24,14 @@ const loginAttempts = new promClient.Counter({
   labelNames: ['status'], // 'success' or 'failure'
 });
 
+loginAttempts.inc({ status: 'success' });
+loginAttempts.inc({ status: 'failure' });
+
+register.registerMetric(loginAttempts);
+
+register.metrics().then((metrics) => {
+  console.log(metrics);
+});
 // Create an HTTP server
 const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/login') {
