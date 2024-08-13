@@ -1,13 +1,39 @@
 const http = require('http');
 const querystring = require('querystring');
+const promClient = require('prom-client');
 
 // Preset username and password
 const USERNAME = 'admin';
 const PASSWORD = 'password123';
 
+// Create a Registry which registers the metrics
+const register = new promClient.Registry();
+
+// Add a default label which is added to all metrics
+register.setDefaultLabels({
+  app: 'nodejs-login-app'
+});
+
+// Enable the collection of default metrics
+promClient.collectDefaultMetrics({ register });
+
+// Create a custom counter metric for login attempts
+const loginAttempts = new promClient.Counter({
+  name: 'login_attempts_total',
+  help: 'Total number of login attempts',
+  labelNames: ['status'], // 'success' or 'failure'
+});
+
+loginAttempts.inc({ status: 'success' });
+loginAttempts.inc({ status: 'failure' });
+
+register.registerMetric(loginAttempts);
+
+register.metrics().then((metrics) => {
+  console.log(metrics);
+});
 // Create an HTTP server
 const server = http.createServer((req, res) => {
-  // Handle POST requests to /login
   if (req.method === 'POST' && req.url === '/login') {
     let body = '';
 
@@ -25,13 +51,18 @@ const server = http.createServer((req, res) => {
       if (username === USERNAME && password === PASSWORD) {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
         res.end('Login successful');
+        loginAttempts.inc({ status: 'success' });
+        console.log(`Login successful for user: ${username}`);
+		console.log('Incremented success login metric');
       } else {
         res.writeHead(401, { 'Content-Type': 'text/plain' });
         res.end('Invalid username or password');
+        loginAttempts.inc({ status: 'failure' });
+        console.log(`Login failed for user: ${username}`);
+		console.log('Incremented failure login metric');
       }
     });
 
-  // Serve the login form on GET requests
   } else if (req.method === 'GET' && req.url === '/') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(`
@@ -57,18 +88,31 @@ const server = http.createServer((req, res) => {
       </html>
     `);
 
-  // Handle 404 for other routes
+  } else if (req.method === 'GET' && req.url === '/metrics') {
+    // Handle the /metrics endpoint asynchronously
+    register.metrics().then((metrics) => {
+      res.writeHead(200, { 'Content-Type': register.contentType });
+      res.end(metrics);
+    }).catch((err) => {
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('Error retrieving metrics');
+      console.error('Error retrieving metrics:', err);
+    });
+
   } else {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not Found');
+    console.log(`404 Not Found: ${req.method} ${req.url}`);
   }
 });
 
-// Start the server
-const port = 3003;
-server.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
-
-// Export the server instance
+// Export the server instance for testing
 module.exports = server;
+
+// Start the server only if this file is executed directly
+if (require.main === module) {
+  const port = 3001;
+  server.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+  });
+}
