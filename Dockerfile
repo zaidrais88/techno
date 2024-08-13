@@ -14,7 +14,7 @@ RUN npm install
 COPY . .
 
 # Expose the port on which the server will run
-EXPOSE 3003
+EXPOSE 3001
 
 # Run the tests
 RUN npm test
