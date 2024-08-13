@@ -1,0 +1,77 @@
+pipeline {
+    agent any
+
+    environment {
+        PATH = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${env.PATH}"
+    }
+
+    stages {
+        stage('Get Repository Webhooks') {
+            steps {
+                // Clone the repository
+                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'f1e13688-0321-4ed3-b4f9-894bd8eaa458', url: 'https://github.com/untanari/loginjs.git']])
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    // Check Node and npm version
+                    sh 'node --version'
+                    sh 'npm --version'
+                    // Install dependencies
+                    sh 'npm install'
+                }
+            }
+        }
+        
+        stage('Set Permissions') {
+            steps {
+                // Set executable permissions for mocha
+                sh 'chmod +x ./node_modules/.bin/mocha'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                // Run tests
+                sh 'npm test'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build the Docker image locally
+                    sh 'docker build -t loginjs-app:latest .'
+                }
+            }
+        }
+
+        stage('Deploy Application') {
+            steps {
+                script {
+                    // Stop and remove any existing container with the same name
+                    sh 'docker rm -f loginjs-container || true'
+                    // Deploy the Docker container
+                    sh 'docker run -d --name loginjs-container -p 3003:3003 loginjs-app:latest'
+                    echo 'Application deployed in Docker container.'
+                }
+            }
+        }
+
+    }
+
+    post {
+        always {
+            // Clean up workspace after the build
+            cleanWs()
+        }
+        success {
+            echo 'Build succeeded!'
+        }
+        failure {
+            echo 'Build failed.'
+        }
+    }
+}
