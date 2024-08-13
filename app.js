@@ -76,7 +76,7 @@ const server = http.createServer((req, res) => {
       <body>
         <h1>Login</h1>
         <form action="/login" method="POST">
-          <label for="username">Username:</label>
+          <label for="username">Usernames:</label>
           <input type="text" id="username" name="username" required>
           <br><br>
           <label for="password">Password:</label>
